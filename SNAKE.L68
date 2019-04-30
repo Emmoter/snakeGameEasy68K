@@ -1,0 +1,1159 @@
+00001000 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.15.04
+Created On: 29/05/2017 11:48:19
+
+00000000                             1  *-----------------------------------------------------------
+00000000                             2  * Title      : SNAKE GAME
+00000000                             3  * Written by : Emilio Molina & David Rubio
+00000000                             4  *-----------------------------------------------------------
+00001000                             5      ORG    $1000
+00001000  =0000004F                  6  RANGO1   EQU 79
+00001000                             7  ***************** Este bloque es solo para probar el generador de números aleatorios
+00001000                             8  ***************** Hacemos llamadas a la subrutina con RANGO=79 y presentamos el resultado
+00001000                             9  ***************** obtenido  
+00001000  =0000003B                 10  RANGO2   EQU 59
+00001000                            11  ***************** Este bloque es solo para probar el generador de números aleatorios
+00001000                            12  ***************** Hacemos llamadas a la subrutina con RANGO=59 y presentamos el resultado
+00001000                            13  ***************** obtenido 
+00001000                            14  * ///////////////////////////////////////////////////////////////////////
+00001000                            15  * ////////////////EMPIEZA EL PROGRAMA//////////////////////
+00001000                            16  START
+00001000  7047                      17      MOVE.L #71,D0 #Usamos este task para iniciar el sonido que sonnará de fondo en la pantalla de inicio.
+00001002  227C 00005137             18      MOVE.L #WELCOME,A1
+00001008  7202                      19      MOVE.L #$2,D1 #Le damos el valor $2 al sonido en la etiqueta WELCOME.
+0000100A  4E4F                      20      TRAP #15 
+0000100C  704C                      21      MOVE.L #76,D0 #Paramos el sonido para que se puedan escuchar los siguientes con el task 76
+0000100E  7400                      22      MOVE.L #0,D2 #Cuando asignamos un 0 a D2 solo se reproduce una vez el sonido.
+00001010  4E4F                      23      TRAP #15
+00001012  4EF9 00001118             24      JMP PANTALLAINICIO
+00001018                            25  START1 
+00001018  704C                      26      MOVE.L #76,D0 #Paramos todos los sonidos con el task 76 dándole el valor 3 a D2.
+0000101A  7403                      27      MOVE.L #3,D2
+0000101C  4E4F                      28      TRAP #15
+0000101E  7200                      29      MOVE.L #0,D1
+00001020  7000                      30      MOVE.L #0,D0   
+00001022  4EF9 00001180             31      JMP MENU
+00001028                            32  START2
+00001028  103C 0021                 33      MOVE.B #33,D0
+0000102C  223C 02800208             34      MOVE.L #640*$10000+520,D1
+00001032  4E4F                      35      TRAP #15   
+00001034  23FC 00000000 00005096    36      MOVE.L #0,PUNTUACION
+0000103E  267C 00002AF0             37      MOVE.L #MATRIZ,A3 #aquí empieza nuestra matriz   VALOR SERPIENTE= #45, VALOR FRUTA=#50
+00001044  247C 00001B50             38      MOVE.L #SERPX,A2 #X
+0000104A  287C 00002320             39      MOVE.L #SERPY,A4 #Y
+00001050  2A7C 0000004F             40      MOVE.L #RANGO1,A5
+00001056  33FC 0001 00001B50        41      MOVE.W #1,SERPX
+0000105E  33FC 0001 00002320        42      MOVE.W #1,SERPY
+00001066  7C01                      43      MOVE.L #1,D6 #contador longitud
+00001068  7200                      44      MOVE.L #0,D1 #iniciamos a 0 D1 (D1.W=LX)
+0000106A  7400                      45      MOVE.L #0,D2 #inciamos a 0 D2 (UY)
+0000106C  7600                      46      MOVE.L #0,D3 #iniciamos a 0 D3 (RX)
+0000106E  7800                      47      MOVE.L #0,D4 #inciamos a 0 D4 (LY)  
+00001070  3A3C 0000                 48      MOVE.W #0,D5 #coordenada x matriz.
+00001074  4845                      49      SWAP D5
+00001076  3A3C 0000                 50      MOVE.W #0,D5 #coordenada y matriz.
+0000107A  4845                      51      SWAP D5
+0000107C  4EB9 00001840             52      JSR INIRND  ;Inicializa la semilla (SOLO SE LLAMA UNA VEZ POR EJECUCIÓN DE PROGRAMA)
+00001082  4EB9 0000199E             53      JSR PUNTOS # Inicia el marcador de puntuacion
+00001088  4EF9 00001792             54      JMP GENERA_BORDES_SUP_INF #genera los bordes en matriz
+0000108E                            55  * ///////////////////////////////////////////////////////////////////////    
+0000108E                            56  SNAKE
+0000108E  4EB9 00001764             57      JSR GENERA_SERPIENTE #genera serpiente en matriz
+00001094  4EB9 00001818             58      JSR GENERA_FRUTA #genera la fruta en matriz
+0000109A                            59  PROGRAMA  
+0000109A                            60      **Este es el bloque principal del programa en sí. Dependiendo de los valores que tenemos en la matriz, saltará a crear borde, serpiente, fruta o fondo.
+0000109A  0C53 001E                 61      CMP.W #30,(A3) #El valor asignado a los bordes es 30. En la dirección de memoria donde haya un 30, será un borde.
+0000109E  6700 06A4                 62      BEQ BORDE
+000010A2  0C53 002D                 63      CMP.W #45,(A3) #El valor asignado a la serpiente es el 45.En la dirección de memoria de la matriz donde haya un 45,pertenecerá a la serpiente.
+000010A6  6700 065C                 64      BEQ SERPIENTE
+000010AA  0C53 0032                 65      CMP.W #50,(A3) #El valor asignado a la fruta es el 50.En la dirección de memoria de la matriz donde haya un 50, aparecerá una fruta.
+000010AE  6700 0634                 66      BEQ FRUTA
+000010B2  0C53 FFFF                 67      CMP.W #$FFFF,(A3) #El valor asignado al fondo es el $FFFF.En la dirección de memoria de la matriz donde haya un $FFFF, será fondo.
+000010B6  6700 066C                 68      BEQ FONDO
+000010BA                            69  VUELTA *Esta subrutina se usa para barrer una fila entera
+000010BA  544B                      70      ADD #2,A3
+000010BC  5245                      71      ADD #1,D5 #sumamos 1 a la X
+000010BE  BA7C 0050                 72      CMP #80,D5
+000010C2  6700 0006                 73      BEQ AUX_SIG
+000010C6  4EF8 109A                 74      JMP PROGRAMA
+000010CA                            75  AUX_SIG *Esta subrutina se usa para que cuando vuelta ha acabado la fila, sume uno al valor de la columna
+000010CA  3A3C 0000                 76      MOVE.W #0,D5
+000010CE  4845                      77      SWAP D5
+000010D0  5245                      78      ADD #1,D5 #sumamos 1 a la Y
+000010D2  BA7C 003C                 79      CMP #60,D5
+000010D6  6700 0008                 80      BEQ SIGUE
+000010DA  4845                      81      SWAP D5
+000010DC  4EF8 109A                 82      JMP PROGRAMA
+000010E0                            83  SIGUE
+000010E0  4EB9 00001312             84      JSR INICIA_TIEMPO #Saltamos a la subrutina que inicia el tiempo
+000010E6  4EB9 000019DC             85      JSR TIEMPO #Saltamos al bucle que calcula el tiempo que el usuario posee y lo muestra en pantalla.
+000010EC  7050                      86      MOVE.L #80,D0
+000010EE  223C 00FFFFFF             87      MOVE.L #$00FFFFFF,D1 # ponemos en blanco el color del pen
+000010F4  7051                      88      MOVE.L #81,D0
+000010F6  223C 0000FF00             89      MOVE.L #$0000FF00,D1  #ponemos en blanco el color de relleno     
+000010FC  4E4F                      90      TRAP #15
+000010FE  4EB9 00001938             91      JSR TECLADO #Salta a la subrutina que lee del teclado para saber qué dirección lleva la serpiente.
+00001104  B27C 0027                 92      CMP.W #$27,D1 #Como la cabeza se encuentra en la posición (0,0), solo damos la opción al usuario de moverse para abajo o para la derecha al principio.Para ello usamos los CMP con los valores ASCII.
+00001108  6700 03AA                 93      BEQ BUCLEDER
+0000110C  B27C 0028                 94      CMP.W #$28,D1
+00001110  6700 04BA                 95      BEQ BUCLEABAJO
+00001114  4EF8 10E0                 96      JMP SIGUE
+00001118                            97  * ///////////////////////////////////////////////////////////////////////
+00001118                            98  * ///////////////////////////////////////////////////////////////////////
+00001118                            99  PANTALLAINICIO     
+00001118                           100  **En esta subrutina creamos la pantalla que aparece nada más iniciar el programa.
+00001118  227C 0000511F            101      MOVE.L #EMPEZAR,A1  #La operación de mover el valor de las etiquetas a A1 para su posterior muestreo en pantalla o lectura se realizará repetidas veces a lo largo de los bloques de menú y pantalla de inicio.
+0000111E  705F                     102      MOVE.L #95,D0
+00001120  323C 00DC                103      MOVE.W #220,D1  #Con estas cuatro instrucciones usamos el task 95. Éste se usa para escribir en pantalla la frase almacenada en A1 en las coordanadas X e Y correspondientes.Por ello,movemos los valores que necesitamos a D1 (columna) y D2 (fila
+00001124  343C 00C8                104      MOVE.W #200,D2
+00001128  4E4F                     105      TRAP #15    
+0000112A  7007                     106      MOVE.L #7,D0 #Como queremos que el usuario pulse alguna tecla para comenzar, usamos el task 7 para poner a 1 D1 en el momento en el que el usuario pulse. Así pues, comparamos después D1 con #1 para saltar al siguiente bloque.
+0000112C  4E4F                     107      TRAP #15
+0000112E  B23C 0001                108      CMP.B #1,D1
+00001132  6700 FEE4                109      BEQ START1
+00001136  7017                     110      MOVE.L #23,D0 #Introducimos varios delays en este bloque para conseguir el efecto parpadeante.
+00001138  223C 000000C8            111      MOVE.L #200,D1
+0000113E  4E4F                     112      TRAP #15
+00001140  7007                     113      MOVE.L #7,D0
+00001142  4E4F                     114      TRAP #15
+00001144  B23C 0001                115      CMP.B #1,D1 #Como se puede observar, se disponen de muchos CMP para detectar el momento justo de pulsación.
+00001148  6700 FECE                116      BEQ START1
+0000114C  4EF9 00001152            117      JMP AUXINICIO
+00001152                           118  AUXINICIO
+00001152                           119  **Auxiliar creada para conseguir el efecto parpadeante.
+00001152  103C 0021                120      MOVE.B #33,D0 #Refrescamos la pantalla para posteriormente volver a poner la frase (parpadea).
+00001156  223C 028001E0            121      MOVE.L #640*$10000+480,D1 #Asignamos tamaño a la pantalla.
+0000115C  4E4F                     122      TRAP #15
+0000115E  7007                     123      MOVE.L #7,D0 #Repetimos las mismas operaciones que realizamos en PANTALLADEINICIO.
+00001160  4E4F                     124      TRAP #15
+00001162  B23C 0001                125      CMP.B #1,D1
+00001166  6700 FEB0                126      BEQ START1
+0000116A  7017                     127      MOVE.L #23,D0
+0000116C  7228                     128      MOVE.L #40,D1
+0000116E  4E4F                     129      TRAP #15
+00001170  7007                     130      MOVE.L #7,D0
+00001172  4E4F                     131      TRAP #15
+00001174  B23C 0001                132      CMP.B #1,D1
+00001178  6700 FE9E                133      BEQ START1
+0000117C  4EF8 1118                134      JMP PANTALLAINICIO
+00001180                           135  * ///////////////////////////////////////////////////////////////////////
+00001180                           136  * ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+00001180                           137  MENU
+00001180  48E7 C000                138      MOVEM.L D0-D1,-(A7) #Guardamos los valores de los registros que necesitamos en la pila.
+00001184                           139      
+00001184  7015                     140      MOVE.L #21,D0 #Ponemos el puntero de color negro.
+00001186  7200                     141      MOVE.L #$00000000,D1
+00001188  4E4F                     142      TRAP #15   
+0000118A  7005                     143      MOVE.L #5,D0 #Esta operación es necesaria para limpiar la última tecla detectada por el task 5, la cual es guardada en D1. Como necesitamos tener D1 limpio, quitamos esa tecla.
+0000118C  4E4F                     144      TRAP #15
+0000118E  4281                     145      CLR.L D1    
+00001190  7047                     146      MOVE.L #71,D0
+00001192  227C 000051DA            147      MOVE.L #MUSICAMENU,A1 #Activamos el sonido correspondiente al menú con el task 71. A esta música se le asigna el valor #$5.
+00001198  123C 0005                148      MOVE.B #$5,D1
+0000119C  4E4F                     149      TRAP #15   
+0000119E  704C                     150      MOVE.L #76,D0 
+000011A0  7401                     151      MOVE.L #1,D2 #Ponemos la música en bucle asignándole el valor 1 a D2.Así sonará mientras estemos en el menú.
+000011A2  4E4F                     152      TRAP #15   
+000011A4  700B                     153      MOVE.L #11,D0
+000011A6  323C FF00                154      MOVE.W #$FF00,D1 #Con estas tres instrucciones y usando el task 11, ponemos a negro la pantalla. Teniendo el valor #$FF00 en D1 conseguimos este efecto.
+000011AA  4E4F                     155      TRAP #15
+000011AC  4240                     156      CLR D0 #Limpiamos por si acaso los registros que vamos a utilizar a continuación, ya que los hemos estado usando en .W y nunca se sabe si esto puede dar problemas en un futuro.
+000011AE  4241                     157      CLR D1    
+000011B0  7050                     158      MOVE.L #80,D0
+000011B2  223C 00FFFFFF            159      MOVE.L #$00FFFFFF,D1  #Puntero a color blanco.
+000011B8  7051                     160      MOVE.L #81,D0
+000011BA  223C 0000FF00            161      MOVE.L #$0000FF00,D1 #Color de relleno a "LIME".   
+000011C0  7015                     162      MOVE.L #21,D0
+000011C2  243C 01200005            163      MOVE.L #$01200005,D2 #Gracias a estas tres instrucciones y usando el task 21, podemos cambiar el tipo de letra, su tamaño y su color introduciéndolos en D2 en Hexadecimal.
+000011C8  4E4F                     164      TRAP #15    
+000011CA  227C 000050F5            165      MOVE.L #TITULO,A1  #Mostramos la frase almacenada en la etiqueta TITULO.
+000011D0  705F                     166      MOVE.L #95,D0
+000011D2  323C 0109                167      MOVE.W #265,D1
+000011D6  343C 0032                168      MOVE.W #50,D2
+000011DA  4E4F                     169      TRAP #15    
+000011DC                           170      **Volvemos a cambiar el color para escribir en pantalla para los modos de juego.
+000011DC  7050                     171      MOVE.L #80,D0
+000011DE  223C 00FFFF00            172      MOVE.L #$00FFFF00,D1 
+000011E4  7051                     173      MOVE.L #81,D0
+000011E6  223C 00FFFF00            174      MOVE.L #$00FFFF00,D1    
+000011EC                           175      **Usamos de nuevo el task 21 para cambiar el tipo de letra, su tamañp y color empleado en los modos de juego.
+000011EC  7015                     176      MOVE.L #21,D0
+000011EE  243C 01090103            177      MOVE.L #$01090103,D2
+000011F4  4E4F                     178      TRAP #15
+000011F6                           179      **Cada modo de juego aparece debajo del anterior en la pantalla para que el usuario elija entre uno de ellos. Cada frase tiene sus coordenadas específicas en la pantalla (Explicado en PANTALLADEINICIO).).
+000011F6  227C 000050C2            180      MOVE.L #MODONORMAL,A1   
+000011FC  705F                     181      MOVE.L #95,D0
+000011FE  323C 00FA                182      MOVE.W #250,D1
+00001202  343C 00C8                183      MOVE.W #200,D2
+00001206  4E4F                     184      TRAP #15
+00001208  227C 000050D3            185      MOVE.L #MODORAPIDO,A1    
+0000120E  705F                     186      MOVE.L #95,D0
+00001210  323C 00FA                187      MOVE.W #250,D1
+00001214  343C 00FA                188      MOVE.W #250,D2
+00001218  4E4F                     189      TRAP #15
+0000121A  227C 000050E6            190      MOVE.L #MODOSKIN,A1    
+00001220  705F                     191      MOVE.L #95,D0
+00001222  323C 00FA                192      MOVE.W #250,D1
+00001226  343C 012C                193      MOVE.W #300,D2
+0000122A  4E4F                     194      TRAP #15   
+0000122C  227C 0000510D            195      MOVE.L #MODOEXTREMO,A1    
+00001232  705F                     196      MOVE.L #95,D0
+00001234  323C 00FA                197      MOVE.W #250,D1
+00001238  343C 015E                198      MOVE.W #350,D2
+0000123C  4E4F                     199      TRAP #15   
+0000123E  227C 000050FB            200      MOVE.L #PULSA,A1    
+00001244  705F                     201      MOVE.L #95,D0
+00001246  323C 00FA                202      MOVE.W #250,D1
+0000124A  343C 0096                203      MOVE.W #150,D2
+0000124E  4E4F                     204      TRAP #15
+00001250  4281                     205      CLR.L D1
+00001252  4CDF 0003                206      MOVEM.L (A7)+,D0-D1 #Sacamos los valores anteriores de la pila.
+00001256                           207  LEER   
+00001256                           208  **Con esta subrutina dentro del menú conseguimos leer lo que el usuario introduce mediante el teclado. Así, sabemos que modo ha elegido.
+00001256  7015                     209      MOVE.L #21,D0
+00001258  7200                     210      MOVE.L #$00000000,D1 #Como el task 5 muestra en pantalla una barra baja indicando donde tiene que escribir el usuario, ponemos el color a negro para que no se vea lo que escriba.
+0000125A  4E4F                     211      TRAP #15     
+0000125C  7005                     212      MOVE.L #5,D0 #Con este task 5, el programa espera hasta que el usuario introduce un valor ASCII mediante el teclado. 
+0000125E  4E4F                     213      TRAP #15    
+00001260  13C1 0000521E            214      MOVE.B D1,MODO
+00001266  0C39 0031 0000521E       215      CMP.B #$31,MODO #Con estos 4 CMP consecutivos conseguimos saber qué modo ha elegido el usuario. Tenemos que comparar con el valor ASCII que tienen los números.
+0000126E  6700 002A                216      BEQ MODONORM #Salta a modo normal.
+00001272  0C39 0032 0000521E       217      CMP.B #$32,MODO
+0000127A  6700 003C                218      BEQ MODOHARD #Salta a modo difícil.
+0000127E  0C39 0033 0000521E       219      CMP.B #$33,MODO
+00001286  6700 004E                220      BEQ MODOPIEL #Salta a modo piel.
+0000128A  0C39 0034 0000521E       221      CMP.B #$34,MODO
+00001292  6700 0060                222      BEQ MODOEXTREM #Salta a modo extremo.
+00001296  4EF8 1256                223      JMP LEER #Si el usuario no se ha decidido o ha pulsado una tecla incorrecta, el bucle vuelve a empezar hasta recibir una orden correcta.
+0000129A                           224      **Ahora vienen los modos. Explicaremos el primero y los demás son exactamente iguales,ya que estos bloques solo se usan para dar valores al tiempo y a la velocidad que cada modo posee.
+0000129A                           225  MODONORM
+0000129A  704C                     226      MOVE.L #76,D0 #Paramos todos los sonidos activos con el task 76 y asignándole un 3 a D2. Lo repetimos para cada modo.
+0000129C  7403                     227      MOVE.L #3,D2
+0000129E  4E4F                     228      TRAP #15
+000012A0                           229      
+000012A0  23FC 00001770 00005224   230      MOVE.L #6000,TIEMPOJUEGO #El usuario contará con 60 segundos para comerse la fruta. Para ello, movemos el valor 6000 (centésimas de segundo) a TIEMPODEJUEGO (etiqueta que guarda el tiempo disponible).
+000012AA                           231  
+000012AA  23FC 0000000A 00005074   232      MOVE.L #10,CONTADORDELAY #Valor de la velocidad a la que va la serpiente.
+000012B4  4EF8 1028                233      JMP START2 #Saltamos al programa propiamente dicho, al que genera la matriz y, posteriormente, los demás elementos y permite jugar. (Se explicará a continuación)
+000012B8                           234  MODOHARD
+000012B8  704C                     235      MOVE.L #76,D0
+000012BA  7403                     236      MOVE.L #3,D2
+000012BC  4E4F                     237      TRAP #15
+000012BE  23FC 00001770 00005224   238      MOVE.L #6000,TIEMPOJUEGO
+000012C8  23FC 0000000A 00005074   239      MOVE.L #10,CONTADORDELAY
+000012D2  4EF8 1028                240      JMP START2
+000012D6                           241  MODOPIEL
+000012D6  704C                     242      MOVE.L #76,D0
+000012D8  7403                     243      MOVE.L #3,D2
+000012DA  4E4F                     244      TRAP #15
+000012DC  23FC 00001770 00005224   245      MOVE.L #6000,TIEMPOJUEGO
+000012E6  23FC 00000008 00005074   246      MOVE.L #8,CONTADORDELAY #Este modo tendrá una velocidad superior.
+000012F0                           247  
+000012F0  4EF8 1028                248      JMP START2
+000012F4                           249  MODOEXTREM  
+000012F4  704C                     250      MOVE.L #76,D0
+000012F6  7403                     251      MOVE.L #3,D2
+000012F8  4E4F                     252      TRAP #15
+000012FA  23FC 00001770 00005224   253      MOVE.L #6000,TIEMPOJUEGO
+00001304  23FC 00000008 00005074   254      MOVE.L #8,CONTADORDELAY #Este modo tendrá una velocidad superior.
+0000130E  4EF8 1028                255      JMP START2
+00001312                           256  * ///////////////////////////////////////////////////////////////////////
+00001312                           257  * ///////////////////////////////////////////////////////////////////////
+00001312                           258  *Estas dos rutinas se encargan de la generación y comprobación del tiempo de juego
+00001312                           259  INICIA_TIEMPO
+00001312                           260  **Esta subrutina se encarga de generar el tiempo, usando el tiempo del sistema y la cantidad de tiempo que queremos que tenga el usuario.
+00001312  48E7 C000                261      MOVEM.L D0-D1,-(A7)
+00001316  7200                     262      MOVE.L #0,D1
+00001318  7000                     263      MOVE.L #0,D0
+0000131A  7008                     264      MOVE.L #8,D0 #Este task 8 escribe en D1 el tiempo del sistema desde la medianoche en centésimas de segundo.
+0000131C  4E4F                     265      TRAP #15
+0000131E  D2B9 00005224            266      ADD.L TIEMPOJUEGO,D1 #Sumamos el valor que tenemos almacenado en TIEMPODEJUEGO (el valor del tiempo disponible) a D1
+00001324  23C1 00005220            267      MOVE.L D1,ENDTIME #Movemos todo a la etiqueta ENDTIME para tenerlo almacenado.
+0000132A  4CDF 0003                268      MOVEM.L (A7)+,D0-D1
+0000132E  4E75                     269      RTS  
+00001330                           270  COMPRUEBA_TIEMPO
+00001330                           271  **Esta subrutina se encarga de comprobar si se ha agotado el tiempo del usuario.Si es así, salta al final programado para este caso.
+00001330  48E7 C000                272      MOVEM.L D0-D1,-(A7)
+00001334  7200                     273      MOVE.L #0,D1
+00001336  7008                     274      MOVE.L #8,D0
+00001338  4E4F                     275      TRAP #15
+0000133A  2439 00005220            276      MOVE.L ENDTIME,D2 #Sacamos el valor que tenemos para compararlo con el del sistema.
+00001340  B282                     277      CMP.L D2,D1 #En el caso de que se haya agotado el tiempo, gracias a BHI saltaremos al final.
+00001342  6200 0712                278      BHI FINAL2
+00001346  4CDF 0003                279      MOVEM.L (A7)+,D0-D1
+0000134A  4E75                     280      RTS
+0000134C                           281  * ///////////////////////////////////////////////////////////////////////
+0000134C                           282  * ///////////////////////////////////////////////////////////////////////
+0000134C                           283  *AQUI EMPIEZA TODO LO QUE CONCIERNE A LA RUTINA DE CRECIMIENTO       
+0000134C                           284  AUX_MODOHARD  
+0000134C  0CB9 00000006 00005074   285      CMP.L #6,CONTADORDELAY #comparamos con el valor mínimo del delay del modo
+00001356  6700 007A                286      BEQ CRECER2 # si es igual lo dejamos como está
+0000135A  53B9 00005074            287      SUB.L #1,CONTADORDELAY # si no, le restamos 1
+00001360  4EF9 000013D2            288      JMP CRECER2
+00001366                           289  AUX_MODOEXTREM
+00001366  0CB9 00000001 00005074   290      CMP.L #1,CONTADORDELAY 
+00001370  6700 0008                291      BEQ AUX_TIMEEX
+00001374  53B9 00005074            292      SUB.L #1,CONTADORDELAY
+0000137A                           293  AUX_TIMEEX
+0000137A  0CB9 000007D0 00005224   294      CMP.L #2000,TIEMPOJUEGO # en este modo además del delay, haremos lo mismo con el tiempo del usuario para comerse la fruta
+00001384  6700 004C                295      BEQ CRECER2
+00001388  04B9 000001F4 00005224   296      SUB.L #500,TIEMPOJUEGO
+00001392  4EF9 000013D2            297      JMP CRECER2
+00001398                           298  AUX_MODOPIEL
+00001398  3A07                     299      MOVE D7,D5 # no movemos las coordenadas x e y completamente
+0000139A  4EF9 0000140E            300      JMP VOLVERPIEL
+000013A0                           301  CRECER
+000013A0  48E7 C040                302      MOVEM.L D0-D1/A1,-(A7) 
+000013A4  7046                     303      MOVE.L #70,D0 
+000013A6  227C 0000516E            304      MOVE.L #COMER,A1
+000013AC  4E4F                     305      TRAP #15 # reproducimos el sonido de comer fruta
+000013AE  4CDF 0203                306      MOVEM.L (A7)+,D0-D1/A1
+000013B2  52B9 00005096            307      ADD.L #1,PUNTUACION #sumamos 1 a la puntuacion
+000013B8  4EB9 0000199E            308      JSR PUNTOS #actualizamos la puntuacion en pantalla 
+000013BE  0C39 0032 0000521E       309      CMP.B #$32,MODO #comprobamos el modo en el que estamos y dependiendo de este aumentamos delay o no, etc...
+000013C6  6784                     310      BEQ AUX_MODOHARD
+000013C8  0C39 0034 0000521E       311      CMP.B #$34,MODO
+000013D0  6794                     312      BEQ AUX_MODOEXTREM
+000013D2                           313  CRECER2
+000013D2  4EB8 1312                314      JSR INICIA_TIEMPO  # actualizamos el tiempo para que se resetee con la nueva fruta
+000013D6  4EB9 00001818            315      JSR GENERA_FRUTA #generamos una nueva fruta aleatoriamente
+000013DC  3F06                     316      MOVE.W D6,-(A7) #guardamos el contador de longitud en la pila
+000013DE  247C 00001B50            317      MOVE.L #SERPX,A2 #movemos la direccion de las X a A2
+000013E4  287C 00002320            318      MOVE.L #SERPY,A4 #movemos la direccion de las Y a A4
+000013EA                           319  BUCL_CRECER
+000013EA                           320      
+000013EA  BC7C 0000                321      CMP.W #0,D6 #comprobamos si la lontigud es 0 (ya ha acabado)
+000013EE  6700 0024                322      BEQ AUX_CRECER
+000013F2  3E12                     323      MOVE.W (A2),D7 #movemos la componente X de la posicion de SERPX al auxiliar D7
+000013F4  4847                     324      SWAP D7
+000013F6  3E14                     325      MOVE.W (A4),D7 #movemos la componente Y de la posicion de SERPY al auxiliar D7
+000013F8  4847                     326      SWAP D7
+000013FA  34C5                     327      MOVE.W D5,(A2)+ #guardamos la X de la  nueva cabeza en la primera posicion de SERPX
+000013FC  4845                     328      SWAP D5
+000013FE  38C5                     329      MOVE.W D5,(A4)+ #guardamos la Y de la  nueva cabeza en la primera posicion de SERPX
+00001400  4845                     330      SWAP D5
+00001402  0C39 0033 0000521E       331      CMP.B #$33,MODO
+0000140A  678C                     332      BEQ AUX_MODOPIEL
+0000140C  2A07                     333      MOVE.L D7,D5 #guardamos el auxiliar D7 en D5 para que sea desplazado en la siguiente ejecución
+0000140E                           334  VOLVERPIEL
+0000140E  5346                     335      SUB #1,D6 #restamos 1 al contador de lontigud
+00001410  4EF8 13EA                336      JMP BUCL_CRECER #volvemos al bucle
+00001414                           337  AUX_CRECER  
+00001414  3487                     338      MOVE.W D7,(A2) #guardamos la X de la ultima posicion de serpiente
+00001416  4847                     339      SWAP D7
+00001418  3887                     340      MOVE.W D7,(A4) #guardamos la Y de la ultima posicion de serpiente
+0000141A  4847                     341      SWAP D7
+0000141C  3C1F                     342      MOVE.W (A7)+,D6   #sacamos el contador de lontigud de la pila  
+0000141E  5246                     343      ADD.W #1,D6 #lo aumentamos en 1
+00001420  247C 00001B50            344      MOVE.L #SERPX,A2 #movemos la direccion donde esta la X de cabeza a A2
+00001426  287C 00002320            345      MOVE.L #SERPY,A4 #movemos la direccion donde esta la Y de cabeza a A2
+0000142C  3A12                     346      MOVE.W (A2),D5 #movemos la X de cabeza a D5
+0000142E  4845                     347      SWAP D5
+00001430  3A14                     348      MOVE.W (A4),D5 #movemos la Y de cabeza a D5
+00001432  4845                     349      SWAP D5
+00001434  7050                     350      MOVE.L #80,D0
+00001436  223C 0000FF00            351      MOVE.L #$0000FF00,D1 # ponemos en blanco el verde del pen
+0000143C  7051                     352      MOVE.L #81,D0
+0000143E  223C 0000FF00            353      MOVE.L #$0000FF00,D1  #ponemos en blanco el verde de relleno     
+00001444  4E4F                     354      TRAP #15    
+00001446  4EB9 000018E2            355      JSR COORDENADAS_A_DIRECCION #obtenemos la posicion de memoria de la nueva cabeza
+0000144C  32BC 002D                356      MOVE.W #45,(A1) #ponemos valor de serpiente
+00001450  4EB9 00001916            357      JSR COORDENADAS_A_PIXEL #obtenemos los valores de pixel en D1-D4
+00001456  4EB9 0000195C            358      JSR DIBUJAR #dibujamos la nueva cabeza
+0000145C  4E75                     359      RTS
+0000145E                           360  * ///////////////////////////////////////////////////////////////////////
+0000145E                           361  * ///////////////////////////////////////////////////////////////////////
+0000145E                           362  SUBRUTINA_CUERPO
+0000145E  3F06                     363      MOVE.W D6,-(A7) #guardamos el contador de lontigud en la pila
+00001460                           364  BUCL
+00001460  5346                     365      SUB #1,D6 #restamos 1 al contador de lontigud
+00001462  BC7C 0000                366      CMP.W #0,D6 #comprobamos si es 0
+00001466  6700 003C                367      BEQ AUX_COLA #si es 0, saltamos al siguiente bucle
+0000146A  544A                     368      ADD.W #2,A2 #apuntamos a la siguiente direccion de SERPX
+0000146C  544C                     369      ADD.W #2,A4 #apuntamos a la siguiente direccion de SERPY
+0000146E  3F07                     370      MOVE.W D7,-(A7) #GUARDAMOS LA X en la pila
+00001470  4847                     371      SWAP D7
+00001472  3F07                     372      MOVE.W D7,-(A7) #GUARDAMOS LA Y en la pila
+00001474  4847                     373      SWAP D7
+00001476  4247                     374      CLR D7
+00001478  3E12                     375      MOVE.W (A2),D7 #movemos la nueva X a D7
+0000147A  4847                     376      SWAP D7
+0000147C  3E14                     377      MOVE.W (A4),D7 #movemos la nueva Y a D7
+0000147E  4847                     378      SWAP D7
+00001480  3897                     379      MOVE.W (A7),(A4) #copiamos la X guardada en la pila a la posicion de SERPX
+00001482  3A1F                     380      MOVE.W (A7)+,D5 #sacamos este valor a D5, para poder saltar a las rutinas de coordenadas a direccion y a pixel 
+00001484  4845                     381      SWAP D5
+00001486  3497                     382      MOVE.W (A7),(A2) #copiamos la Y guardada en la pila a la posicion de SERPY
+00001488                           383  
+00001488  3A1F                     384      MOVE.W (A7)+,D5 #sacamos este valor a D5
+0000148A  4EB9 000018E2            385      JSR COORDENADAS_A_DIRECCION #sacamos la direccion
+00001490  32BC 002D                386      MOVE.W #45,(A1) #ponemos valor de serpiente en ella
+00001494  4EB9 00001916            387      JSR COORDENADAS_A_PIXEL #obtenemos valores D1-D4 para dibujar
+0000149A  4EB9 0000195C            388      JSR DIBUJAR #dibujamos
+000014A0  4EF8 1460                389      JMP BUCL 
+000014A4                           390  AUX_COLA
+000014A4  3C1F                     391      MOVE.W (A7)+,D6 #sacamos el contador de lontigud original
+000014A6  247C 00001B50            392      MOVE.L #SERPX,A2 
+000014AC  287C 00002320            393      MOVE.L #SERPY,A4
+000014B2  4E75                     394      RTS
+000014B4                           395  *\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\   
+000014B4                           396  BUCLEDER
+000014B4  3A12                     397      MOVE.W (A2),D5 #movemos la X de cabeza a D5
+000014B6  5245                     398      ADD.W #1,D5 #sumamos 1
+000014B8  4845                     399      SWAP D5
+000014BA  3A14                     400      MOVE.W (A4),D5 #movemos la Y de cabeza a D5
+000014BC  4845                     401      SWAP D5
+000014BE  4EB9 000018E2            402      JSR COORDENADAS_A_DIRECCION #sacamos direccion
+000014C4  0C51 002D                403      CMP.W #45,(A1) #comprobamos si hay serpiente
+000014C8  6700 05AE                404      BEQ FINAL  #si hay, perdemos
+000014CC  0C51 001E                405      CMP #30,(A1) #comprobamos si hay muro
+000014D0  6700 05A6                406      BEQ FINAL #si hay, perdemos
+000014D4  0C51 0032                407      CMP.W #50,(A1) #comprueba si hay fruta
+000014D8  6700 005E                408      BEQ AUX_DER2
+000014DC                           409  AUX_DER    
+000014DC  32BC 002D                410      MOVE.W #45,(A1)   #pone serpiente en esa direccion
+000014E0  3E39 00001B50            411      MOVE.W SERPX,D7 #movemos X de cabeza a auxiliar D7
+000014E6  4847                     412      SWAP D7
+000014E8  3E39 00002320            413      MOVE.W SERPY,D7 #movemos Y de cabeza a auxiliar D7
+000014EE  4847                     414      SWAP D7    
+000014F0  3485                     415      MOVE.W D5, (A2) #actualizamos SERPX con nuevo valor de cabeza
+000014F2  4845                     416      SWAP D5
+000014F4  3885                     417      MOVE.W D5,(A4) #actualizamos SERPY con nuevo valor de cabeza
+000014F6  4845                     418      SWAP D5
+000014F8  4EB9 00001916            419      JSR COORDENADAS_A_PIXEL #obtenemos D1-D4
+000014FE  4EB9 0000195C            420      JSR DIBUJAR #dibujamos nueva cabeza       
+00001504                           421  CUERPODER
+00001504  4EB8 145E                422      JSR SUBRUTINA_CUERPO 
+00001508  4EF9 0000150E            423      JMP COLADER
+0000150E                           424  COLADER
+0000150E  4EB9 00001962            425      JSR BORRA #borramos ultima posicion
+00001514  4EB8 1330                426      JSR COMPRUEBA_TIEMPO #comprobamos si no ha agotado tiempo
+00001518  4EB9 000019DC            427      JSR TIEMPO #actualizamos el marcador de tiempo
+0000151E                           428        
+0000151E  4EB9 00001938            429      JSR TECLADO #leemos teclado
+00001524  B27C 0028                430      CMP.W #$28,D1 #comprobamos si ha pulsado tecla de otro movimiento
+00001528  6700 00A2                431      BEQ BUCLEABAJO
+0000152C  B27C 0026                432      CMP.W #$26,D1
+00001530  6700 0126                433      BEQ BUCLEARRIBA
+00001534  4EF8 14B4                434      JMP BUCLEDER
+00001538                           435  AUX_DER2
+00001538  4EB8 13A0                436      JSR CRECER
+0000153C  4EF8 14B4                437      JMP BUCLEDER
+00001540                           438  * ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+00001540                           439  BUCLEIZQ
+00001540                           440  **Los bucles de movimientos son muy similares al de BUCLEDER, el cual ya está comentado.
+00001540  3A12                     441      MOVE.W (A2),D5 #Si vamos a movernos hacia la izquierda, ponemos el valor donde estamos (Coordenada Y e X) en D5 (MSB Y, LSB X)
+00001542  5345                     442      SUB.W #1,D5 #Restamos uno. Si estamos en la posición (2,1) pasamos a la (1,1) ya que nos desplazamos hacia la izquierda. 
+00001544  4845                     443      SWAP D5
+00001546  3A14                     444      MOVE.W (A4),D5
+00001548  4845                     445      SWAP D5
+0000154A  4EB9 000018E2            446      JSR COORDENADAS_A_DIRECCION
+00001550  0C51 002D                447      CMP.W #45,(A1)
+00001554  6700 0522                448      BEQ FINAL  
+00001558  0C51 001E                449      CMP #30,(A1)
+0000155C  6700 051A                450      BEQ FINAL
+00001560  0C51 0032                451      CMP.W #50,(A1)
+00001564  6700 005E                452      BEQ AUX_IZQ2
+00001568                           453  AUX_IZQ    
+00001568  32BC 002D                454      MOVE.W #45,(A1)   
+0000156C  3E39 00001B50            455      MOVE.W SERPX,D7
+00001572  4847                     456      SWAP D7
+00001574  3E39 00002320            457      MOVE.W SERPY,D7
+0000157A  4847                     458      SWAP D7   
+0000157C  3485                     459      MOVE.W D5, (A2)
+0000157E  4845                     460      SWAP D5
+00001580  3885                     461      MOVE.W D5,(A4)
+00001582  4845                     462      SWAP D5
+00001584  4EB9 00001916            463      JSR COORDENADAS_A_PIXEL
+0000158A  4EB9 0000195C            464      JSR DIBUJAR   
+00001590                           465  CUERPOIZQ
+00001590  4EB8 145E                466      JSR SUBRUTINA_CUERPO
+00001594  4EF9 0000159A            467      JMP COLAIZQ
+0000159A                           468  COLAIZQ
+0000159A  4EB9 00001962            469      JSR BORRA  
+000015A0  4EB8 1330                470      JSR COMPRUEBA_TIEMPO     
+000015A4  4EB9 000019DC            471      JSR TIEMPO    
+000015AA  4EB9 00001938            472      JSR TECLADO
+000015B0  B27C 0028                473      CMP.W #$28,D1
+000015B4  6700 0016                474      BEQ BUCLEABAJO
+000015B8  B27C 0026                475      CMP.W #$26,D1
+000015BC  6700 009A                476      BEQ BUCLEARRIBA
+000015C0  4EF8 1540                477      JMP BUCLEIZQ
+000015C4                           478  AUX_IZQ2
+000015C4  4EB8 13A0                479      JSR CRECER
+000015C8  4EF8 1540                480      JMP BUCLEIZQ
+000015CC                           481  * ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+000015CC                           482  BUCLEABAJO
+000015CC  3A12                     483      MOVE.W (A2),D5
+000015CE  4845                     484      SWAP D5
+000015D0  3A14                     485      MOVE.W (A4),D5
+000015D2  5245                     486      ADD.W #1,D5
+000015D4  4845                     487      SWAP D5
+000015D6  4EB9 000018E2            488      JSR COORDENADAS_A_DIRECCION
+000015DC  0C51 002D                489      CMP.W #45,(A1)
+000015E0  6700 0496                490      BEQ FINAL  
+000015E4  0C51 001E                491      CMP #30,(A1)
+000015E8  6700 048E                492      BEQ FINAL
+000015EC  0C51 0032                493      CMP.W #50,(A1)
+000015F0  6700 005E                494      BEQ AUX_ABA2
+000015F4                           495  AUX_ABA    
+000015F4  32BC 002D                496      MOVE.W #45,(A1)  
+000015F8  3E39 00001B50            497      MOVE.W SERPX,D7
+000015FE  4847                     498      SWAP D7
+00001600  3E39 00002320            499      MOVE.W SERPY,D7
+00001606  4847                     500      SWAP D7   
+00001608  3485                     501      MOVE.W D5,(A2)
+0000160A  4845                     502      SWAP D5
+0000160C  3885                     503      MOVE.W D5,(A4)
+0000160E  4845                     504      SWAP D5
+00001610  4EB9 00001916            505      JSR COORDENADAS_A_PIXEL
+00001616  4EB9 0000195C            506      JSR DIBUJAR 
+0000161C                           507  CUERPOABA
+0000161C  4EB8 145E                508      JSR SUBRUTINA_CUERPO
+00001620  4EF9 00001626            509      JMP COLAABA
+00001626                           510  COLAABA
+00001626  4EB9 00001962            511      JSR BORRA
+0000162C  4EB8 1330                512      JSR COMPRUEBA_TIEMPO   
+00001630  4EB9 000019DC            513      JSR TIEMPO  
+00001636  4EB9 00001938            514      JSR TECLADO
+0000163C  B27C 0025                515      CMP.W #$25,D1
+00001640  6700 FEFE                516      BEQ BUCLEIZQ
+00001644  B27C 0027                517      CMP.W #$27,D1
+00001648  6700 FE6A                518      BEQ BUCLEDER
+0000164C  4EF8 15CC                519      JMP BUCLEABAJO
+00001650                           520  AUX_ABA2
+00001650  4EB8 13A0                521      JSR CRECER
+00001654  4EF8 15CC                522      JMP BUCLEABAJO   
+00001658                           523   * ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+00001658                           524  BUCLEARRIBA
+00001658  3A12                     525      MOVE.W (A2),D5
+0000165A  4845                     526      SWAP D5
+0000165C  3A14                     527      MOVE.W (A4),D5
+0000165E  5345                     528      SUB.W #1,D5
+00001660  4845                     529      SWAP D5
+00001662  4EB9 000018E2            530      JSR COORDENADAS_A_DIRECCION
+00001668  0C51 002D                531      CMP.W #45,(A1)
+0000166C  6700 040A                532      BEQ FINAL  
+00001670  0C51 001E                533      CMP #30,(A1)
+00001674  6700 0402                534      BEQ FINAL
+00001678  0C51 0032                535      CMP.W #50,(A1)
+0000167C  6700 005E                536      BEQ AUX_ARR2
+00001680                           537  AUX_ARR    
+00001680  32BC 002D                538      MOVE.W #45,(A1)   
+00001684  3E39 00001B50            539      MOVE.W SERPX,D7
+0000168A  4847                     540      SWAP D7
+0000168C  3E39 00002320            541      MOVE.W SERPY,D7
+00001692  4847                     542      SWAP D7    
+00001694  3485                     543      MOVE.W D5,(A2)
+00001696  4845                     544      SWAP D5
+00001698  3885                     545      MOVE.W D5,(A4)
+0000169A  4845                     546      SWAP D5
+0000169C  4EB9 00001916            547      JSR COORDENADAS_A_PIXEL
+000016A2  4EB9 0000195C            548      JSR DIBUJAR 
+000016A8                           549  CUERPOARR
+000016A8  4EB8 145E                550      JSR SUBRUTINA_CUERPO
+000016AC  4EF9 000016B2            551      JMP COLAARR
+000016B2                           552  COLAARR
+000016B2  4EB9 00001962            553      JSR BORRA   
+000016B8  4EB8 1330                554      JSR COMPRUEBA_TIEMPO 
+000016BC  4EB9 000019DC            555      JSR TIEMPO
+000016C2  4EB9 00001938            556      JSR TECLADO
+000016C8  B27C 0025                557      CMP.W #$25,D1
+000016CC  6700 FE72                558      BEQ BUCLEIZQ
+000016D0  B27C 0027                559      CMP.W #$27,D1
+000016D4  6700 FDDE                560      BEQ BUCLEDER
+000016D8  4EF8 1658                561      JMP BUCLEARRIBA
+000016DC                           562  AUX_ARR2
+000016DC  4EB8 13A0                563      JSR CRECER
+000016E0  4EF8 1658                564      JMP BUCLEARRIBA
+000016E4                           565  * ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+000016E4                           566  * ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+000016E4                           567  
+000016E4                           568  * ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+000016E4                           569  * ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+000016E4                           570  FRUTA *Esta subrutina pinta fruta
+000016E4  7050                     571      MOVE.L #80,D0
+000016E6  223C 00FF00FF            572      MOVE.L #$00FF00FF,D1 # ponemos en morado el color del pen
+000016EC  7051                     573      MOVE.L #81,D0
+000016EE  223C 00FF00FF            574      MOVE.L #$00FF00FF,D1  #ponemos en morado el color de relleno     
+000016F4  4E4F                     575      TRAP #15   
+000016F6  4EB9 00001916            576      JSR COORDENADAS_A_PIXEL
+000016FC  7058                     577      MOVE.L #88,D0
+000016FE  4E4F                     578      TRAP #15  
+00001700  4EF8 10BA                579      JMP VUELTA 
+00001704                           580  * ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+00001704                           581  SERPIENTE *Esta subrutina pinta el primer valor de serpiente
+00001704  7050                     582      MOVE.L #80,D0
+00001706  223C 00FFFFFF            583      MOVE.L #$00FFFFFF,D1 # ponemos en blanco el color del pen
+0000170C  7051                     584      MOVE.L #81,D0
+0000170E  223C 0000FF00            585      MOVE.L #$0000FF00,D1  #ponemos en verde el color de relleno     
+00001714  4E4F                     586      TRAP #15
+00001716  4EB9 00001916            587      JSR COORDENADAS_A_PIXEL 
+0000171C  7057                     588      MOVE.L #87,D0
+0000171E  4E4F                     589      TRAP #15
+00001720  4EF8 10BA                590      JMP VUELTA
+00001724                           591   * ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+00001724                           592  FONDO *esta subrutina pinta el fondo
+00001724  7050                     593      MOVE.L #80,D0
+00001726  223C 00FFFFFF            594      MOVE.L #$00FFFFFF,D1 # ponemos en blanco el color del pen
+0000172C  7051                     595      MOVE.L #81,D0
+0000172E  223C 00FFFFFF            596      MOVE.L #$00FFFFFF,D1  #ponemos en blanco el color de relleno     
+00001734  4E4F                     597      TRAP #15
+00001736  4EB9 00001916            598      JSR COORDENADAS_A_PIXEL
+0000173C  7057                     599      MOVE.L #87,D0
+0000173E  4E4F                     600      TRAP #15  
+00001740  4EF8 10BA                601      JMP VUELTA   
+00001744                           602  * ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+00001744                           603  BORDE *Esta subrutina se encarga de pintar los bordes
+00001744  7050                     604      MOVE.L #80,D0
+00001746  223C 00FFFFFF            605      MOVE.L #$00FFFFFF,D1 # ponemos en blanco el color del pen
+0000174C  7051                     606      MOVE.L #81,D0
+0000174E  223C 000000FF            607      MOVE.L #$000000FF,D1  #ponemos en rojo el color de relleno     
+00001754  4E4F                     608      TRAP #15
+00001756  4EB9 00001916            609      JSR COORDENADAS_A_PIXEL 
+0000175C  7057                     610      MOVE.L #87,D0
+0000175E  4E4F                     611      TRAP #15
+00001760  4EF8 10BA                612      JMP VUELTA
+00001764                           613  * ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+00001764                           614  * ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+00001764                           615  GENERA_SERPIENTE *Esta subrutina crea el primer valor de serpiente (la cabeza) en la posicion (1,1)
+00001764  2F05                     616      MOVE.L D5,-(A7)
+00001766  4285                     617      CLR.L D5
+00001768  3A3C 0001                618      MOVE.W #1,D5 #1 en la X
+0000176C  4845                     619      SWAP D5
+0000176E  3A3C 0001                620      MOVE.W #1,D5 #1 en la Y
+00001772  4845                     621      SWAP D5
+00001774  3485                     622      MOVE.W D5,(A2)
+00001776  4845                     623      SWAP D5
+00001778  3885                     624      MOVE.W D5,(A4)
+0000177A  4845                     625      SWAP D5
+0000177C  4EB9 000018E2            626      JSR COORDENADAS_A_DIRECCION
+00001782  32BC 002D                627      MOVE #45,(A1) #ponemos valor de serpiente en la memoria
+00001786  227C 00000000            628      MOVE.L #0,A1
+0000178C  4285                     629      CLR.L D5
+0000178E  2A1F                     630      MOVE.L (A7)+,D5
+00001790  4E75                     631      RTS
+00001792                           632  * ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+00001792                           633  * ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////    
+00001792                           634  GENERA_BORDES_SUP_INF *Esta subrutina es la que se encarga de generar los bordes
+00001792  4EF9 0000179E            635      JMP BORDE_SUP_INF
+00001798                           636  GENERA_BORDES_LAT   
+00001798  4EF9 000017DA            637      JMP BORDE_LAT
+0000179E                           638  BORDE_SUP_INF *Empieza barriendo los bordes superiores e inferiores (Primero hace la primera fila(donde y=0)
+0000179E  4EB9 000018E2            639      JSR COORDENADAS_A_DIRECCION     
+000017A4  32BC 001E                640      MOVE.W #30,(A1) #pone valor de borde en memoria
+000017A8  5245                     641      ADD #1,D5 #pasa a siguiente direccion
+000017AA  BA7C 0050                642      CMP #80,D5 #compara con el final de la fila
+000017AE  6700 0006                643      BEQ VUELTA_1
+000017B2  4EF8 179E                644      JMP BORDE_SUP_INF
+000017B6                           645  VUELTA_1 *si llega al final de la fila
+000017B6  4845                     646      SWAP D5
+000017B8  BA7C 003B                647      CMP #59,D5 *compara si el valor de y es 59(ultima fila)
+000017BC  6700 0010                648      BEQ AUX #si la y vale 59, significa que hemos recorrido los dos bordes horizontales y saltamos
+000017C0  3A3C 003B                649      MOVE.W #59,D5 *Si no es así, ponemos en y el valor 59 (ya que hemos barrido la fila para y=0 previamente
+000017C4  4845                     650      SWAP D5
+000017C6  3A3C 0000                651      MOVE.W #0,D5 #ponemos a 0 la X
+000017CA  4EF8 1792                652      JMP GENERA_BORDES_SUP_INF *repetimos
+000017CE                           653  AUX
+000017CE  7A00                     654      MOVE.L #0,D5 #ponemos las coordenadas a 0
+000017D0  227C 00000000            655      MOVE.L #0,A1
+000017D6  4EF8 1798                656      JMP GENERA_BORDES_LAT
+000017DA                           657  BORDE_LAT *el primer barrido hace todas las y para x=0, el segundo para x=79
+000017DA  4EB9 000018E2            658      JSR COORDENADAS_A_DIRECCION
+000017E0  32BC 001E                659      MOVE.W #30,(A1) #ponemos en la direccion valor de borde
+000017E4  4845                     660      SWAP D5
+000017E6  5245                     661      ADD #1,D5 #sumamos 1 a la y
+000017E8  BA7C 003C                662      CMP #60,D5 #comparamos con valor final de columna
+000017EC  6700 0008                663      BEQ VUELTA_2
+000017F0  4845                     664      SWAP D5
+000017F2  4EF8 17DA                665      JMP BORDE_LAT
+000017F6                           666  VUELTA_2 *cuando acabamos la columna saltamos aqui   
+000017F6  3A3C 0000                667      MOVE.W #0,D5 *ponemos la y a 0
+000017FA  4845                     668      SWAP D5
+000017FC  BA7C 004F                669      CMP #79,D5 *comprobamos el valor de X(primer barrido x=0, segundo x=79)
+00001800  6700 000A                670      BEQ AUX2 *Si vale 79, hemos acabado
+00001804  3A3C 004F                671      MOVE.W #79,D5 *Si no, ponemos el valor de X=79 (ultima columna) y repetimos
+00001808  4EF8 1798                672      JMP GENERA_BORDES_LAT
+0000180C                           673  AUX2 * Al acabar, reseteamos y volvemos
+0000180C  7A00                     674      MOVE.L #0,D5
+0000180E  227C 00000000            675      MOVE.L #0,A1
+00001814  4EF8 108E                676      JMP SNAKE
+00001818                           677  * ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+00001818                           678  * ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////   
+00001818                           679  *Este bloque fue facilitado por el profesorado así que no vamos a entrar en detalles.
+00001818                           680  *Basicamente llamamos al bucle dos veces, una con rango 79 (para las X) y otra con rango 59 (para las Y) y guardamos esas posiciones en D5
+00001818                           681  GENERA_FRUTA
+00001818  2F05                     682          MOVE.L D5,-(A7)
+0000181A  2F07                     683          MOVE.L D7,-(A7)
+0000181C  2A7C 0000004F            684          MOVE.L #RANGO1,A5     
+00001822                           685  OTRO 
+00001822  200D                     686          MOVE.L A5,D0
+00001824  4EB9 0000184C            687          JSR LAB_RND
+0000182A  3A00                     688          MOVE.W D0,D5
+0000182C  BAFC 003B                689          CMP #RANGO2,A5
+00001830  6700 0064                690          BEQ AUX_SALIR
+00001834  2A7C 0000003B            691          MOVE.L #RANGO2,A5
+0000183A  4845                     692          SWAP D5
+0000183C  4EF8 1822                693          JMP OTRO   
+00001840                           694  INIRND                *Esta subrutina inicializa la semilla (variable PRNL) a partir del reloj
+00001840  7008                     695          MOVE.L  #8,D0
+00001842  4E4F                     696          TRAP    #15
+00001844  23C1 00005070            697          MOVE.L D1,PRNL *En D1 obtenemos las centesimas de segundo desde media noche que asignamos a PRNL
+0000184A  4E75                     698          RTS       
+0000184C  48E7 7000                699  LAB_RND MOVEM.L D1-D3,-(A7) ;guarda registros utilizados
+00001850                           700   
+00001850  2200                     701          MOVE.L D0,D1
+00001852  5281                     702          ADD.L #1,D1       * calculamos el rango para un valor más (luego lo eliminamos)
+00001854  203C 0000FFFF            703          MOVE.L #$FFFF,D0
+0000185A  80C1                     704          DIVU D1,D0        * obtiene el factor de escala rango
+0000185C  C0BC 0000FFFF            705          AND.L #$FFFF,D0   * elimina resto
+00001862  5280                     706          ADD.L #1,D0       * sumamos 1 al factor de escala para eliminar el posible valor de más
+00001864  2600                     707          MOVE.L D0,D3      * pasamos factor de escala a D3
+00001866                           708         
+00001866  2039 00005070            709          MOVE.L  PRNL,D0         * get current seed longword
+0000186C  72AF                     710          MOVEQ           #$AF-$100,d1            * set EOR value
+0000186E  7413                     711          MOVEQ           #19,d2                  * do this 19 times
+00001870                           712  Ninc0
+00001870  D080                     713          ADD.L           d0,d0                           * shift left 1 bit
+00001872  6402                     714          BCC.S           Ninc1                           * if bit not set skip feedback
+00001874                           715   
+00001874  B300                     716          EOR.B           D1,D0                           * do Galois LFSR feedback
+00001876                           717  Ninc1
+00001876  5342                     718          SUBQ #1,D2
+00001878  66F6                     719          BNE             Ninc0                   * loop
+0000187A                           720   
+0000187A  23C0 00005070            721          MOVE.L  D0,PRNL         * save back to seed longword
+00001880                           722         
+00001880  4840                     723          SWAP D0          ;Obtiene la palabra alta
+00001882  C0BC 0000FFFF            724          AND.L #$FFFF,D0  ;Se queda con esa palabra 0-65535
+00001888                           725         
+00001888  80C3                     726          DIVU D3,D0       ;aplicamos factor de escala    
+0000188A  C0BC 0000FFFF            727          AND.L #$FFFF,D0  ;Se queda solo con el cociente (solo 16 bits)
+00001890  4CDF 000E                728          MOVEM.L (A7)+,D1-D3
+00001894  4E75                     729          RTS
+00001896                           730  AUX_SALIR
+00001896  4845                     731      SWAP D5
+00001898  4EB9 000018E2            732      JSR COORDENADAS_A_DIRECCION
+0000189E  0C51 002D                733      CMP #45,(A1)
+000018A2  6700 0032                734      BEQ AUX_FRUTA2
+000018A6  0C51 001E                735      CMP #30,(A1)
+000018AA  6700 002A                736      BEQ AUX_FRUTA2
+000018AE  32BC 0032                737      MOVE.W #50,(A1)
+000018B2  7050                     738      MOVE.L #80,D0
+000018B4  223C 00FF00FF            739      MOVE.L #$00FF00FF,D1 # ponemos en blanco el color del pen
+000018BA  7051                     740      MOVE.L #81,D0
+000018BC  223C 00FF00FF            741      MOVE.L #$00FF00FF,D1  #ponemos en blanco el color de relleno     
+000018C2  4E4F                     742      TRAP #15
+000018C4  4EB9 00001916            743      JSR COORDENADAS_A_PIXEL
+000018CA  7058                     744      MOVE.L #88,D0
+000018CC  4E4F                     745      TRAP #15
+000018CE  4285                     746      CLR.L D5
+000018D0  2E1F                     747      MOVE.L (A7)+,D7
+000018D2  2A1F                     748      MOVE.L (A7)+,D5
+000018D4  4E75                     749      RTS
+000018D6                           750  AUX_FRUTA2
+000018D6  7A00                     751      MOVE.L #0,D5
+000018D8  2A7C 0000004F            752      MOVE.L #RANGO1,A5
+000018DE  4EF8 1822                753      JMP OTRO 
+000018E2                           754  * ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+000018E2                           755  * ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+000018E2                           756  COORDENADAS_A_DIRECCION
+000018E2  2F06                     757      MOVE.L D6,-(A7) #guardamos el registro de lontigud
+000018E4  2F05                     758      MOVE.L D5,-(A7) #guardamos las coordenadas en la pila
+000018E6  3F05                     759      MOVE.W D5,-(A7) #guardamos las x en la pila
+000018E8  343C 0000                760      MOVE.W #0,D2
+000018EC  3C3C 0000                761      MOVE.W #0,D6
+000018F0  4245                     762      CLR.W D5
+000018F2  4845                     763      SWAP D5
+000018F4  3C05                     764      MOVE.W D5,D6 #registro auxiliar para guardar las y
+000018F6  CAFC 00A0                765      MULU #$A0,D5 #multiplicamos las y por 80 (por cada fila)
+000018FA  D445                     766      ADD D5,D2
+000018FC  4245                     767      CLR.W D5
+000018FE  3A1F                     768      MOVE.W (A7)+,D5 #sacamos la coordenada X a D5
+00001900  CAFC 0002                769      MULU #2,D5  #Necesitas multiplicar por 2 porque necesitas tamaño W ya que nuestra matriz es de tamaño W.
+00001904  0645 2AF0                770      ADD #MATRIZ,D5 #Sumas el valor de la etiqueta Matriz (donde se encuentra el principio de nuestra matriz).
+00001908  2245                     771      MOVE.L D5,A1 #Mueves el valor que tenemos de la dirección a A1, el registro donde se almacenará el valor definitivo de la dirección.
+0000190A  D2C2                     772      ADD D2,A1 #Sumamos el valor de D2 y con esto conseguimos el valor de la dirección que necesitamos.
+0000190C  7C00                     773      MOVE.L #0,D6
+0000190E  7400                     774      MOVE.L #0,D2
+00001910  2A1F                     775      MOVE.L (A7)+,D5
+00001912  2C1F                     776      MOVE.L (A7)+,D6
+00001914  4E75                     777      RTS
+00001916                           778  * ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+00001916                           779  * ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////   
+00001916                           780  COORDENADAS_A_PIXEL *Esta subrutina se encarga de apartir de las coordenadas X e Y obtener las posiciones D1-D4 para dibujar
+00001916  3205                     781      MOVE.W D5,D1 #movemos coordenada x a D1
+00001918  C2FC 0008                782      MULU #8,D1
+0000191C  3605                     783      MOVE.W D5,D3 #movemos coordenada x a D3
+0000191E  5243                     784      ADD #1,D3
+00001920  C6FC 0008                785      MULU #8,D3
+00001924  4845                     786      SWAP D5 #cambiamos para usar coordenada y
+00001926  3405                     787      MOVE.W D5,D2 #movemos coordenada y a D2
+00001928  C4FC 0008                788      MULU #8, D2
+0000192C  3805                     789      MOVE.W D5,D4 #movemos coordenada y a D4
+0000192E  5244                     790      ADD #1,D4
+00001930  C8FC 0008                791      MULU #8,D4
+00001934  4845                     792      SWAP D5    #volvemos a girar D5 para tener primero coordenada x   
+00001936  4E75                     793      RTS
+00001938                           794  * ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+00001938                           795  * ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+00001938                           796  TECLADO
+00001938  4241                     797      CLR D1    
+0000193A                           798  LECTURA
+0000193A  7013                     799      MOVE.L #19,D0 #Leemos lo que el usuario introduce mediante el teclado.
+0000193C  4E4F                     800      TRAP #15 
+0000193E  4EB9 00001946            801      JSR DELAY #Introducimos un DELAY para leerlo.
+00001944  4E75                     802      RTS   
+00001946                           803  * ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+00001946                           804  DELAY *Introduce un retraso
+00001946  48E7 E000                805      MOVEM.L D0-D2,-(A7)
+0000194A  2439 00005074            806      MOVE.L CONTADORDELAY,D2
+00001950  7017                     807      MOVE.L #23,D0
+00001952  2202                     808      MOVE.L D2,D1
+00001954  4E4F                     809      TRAP #15
+00001956  4CDF 0007                810      MOVEM.L (A7)+, D0-D2
+0000195A  4E75                     811      RTS
+0000195C                           812  * ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+0000195C                           813  DIBUJAR 
+0000195C  7057                     814      MOVE.L #87,D0 #El task 87 se encarga de dibujar un cuadradito usando los valores que hay en D1,D2,D3,D4. Esta subrutina la llamamos para dibujar en pantalla una vez tenemos los píxeles adecuados en los registros.
+0000195E  4E4F                     815      TRAP #15
+00001960  4E75                     816      RTS
+00001962                           817  * ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+00001962                           818  BORRA *Esta subrutina se encarga de borrar las partes de la serpiente que ya no pertenecen a la misma.Borra las coordenadas de paso de la serpiente que deben volver a ser fondo.
+00001962  2F05                     819      MOVE.L D5,-(A7)
+00001964  2A07                     820      MOVE.L D7,D5 #Almacenamos en D5 los valores de las coordenadas X e Y.
+00001966  4EB8 18E2                821      JSR COORDENADAS_A_DIRECCION
+0000196A  32BC FFFF                822      MOVE.W #$FFFF,(A1)
+0000196E  7050                     823      MOVE.L #80,D0
+00001970  223C 00FFFFFF            824      MOVE.L #$00FFFFFF,D1 # ponemos en blanco el color del pen
+00001976  7051                     825      MOVE.L #81,D0
+00001978  223C 00FFFFFF            826      MOVE.L #$00FFFFFF,D1  #ponemos en blanco el color de relleno 
+0000197E  4E4F                     827      TRAP #15    
+00001980  4EB8 1916                828      JSR COORDENADAS_A_PIXEL
+00001984  4EB8 195C                829      JSR DIBUJAR
+00001988  7050                     830      MOVE.L #80,D0
+0000198A  223C 00FFFFFF            831      MOVE.L #$00FFFFFF,D1 # ponemos en blanco el color del pen
+00001990  7051                     832      MOVE.L #81,D0
+00001992  223C 0000FF00            833      MOVE.L #$0000FF00,D1  #ponemos en LIME el color de relleno     
+00001998  4E4F                     834      TRAP #15
+0000199A  2A1F                     835      MOVE.L (A7)+,D5
+0000199C  4E75                     836      RTS
+0000199E                           837  * ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////   
+0000199E                           838  * /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// 
+0000199E                           839  PUNTOS *Esta subrutina se encarga de gestionar el marcador de puntuación
+0000199E  48E7 C040                840      MOVEM.L D0-D1/A1,-(A7)  
+000019A2  7015                     841      MOVE.L #21,D0 #Con estas siete instrucciones, ponemos el color a blanco y el tipo de letra normal con color de relleno negro.
+000019A4  7400                     842      MOVE.L #0,D2
+000019A6  223C 00FFFFFF            843      MOVE.L #$00FFFFFF,D1
+000019AC  4E4F                     844      TRAP #15
+000019AE  7051                     845      MOVE.L #81,D0
+000019B0  7200                     846      MOVE.L #$00000000,D1
+000019B2  4E4F                     847      TRAP #15
+000019B4  4240                     848      CLR D0
+000019B6  4241                     849      CLR D1
+000019B8  700B                     850      MOVE.L #11,D0 #Movemos el cursos a donde lo necesitamos para escribir la puntuación del usuario.
+000019BA  223C 00002521            851      MOVE.L #$2521,D1
+000019C0  4E4F                     852      TRAP #15    
+000019C2  700E                     853      MOVE.L #14,D0
+000019C4  227C 0000508E            854      MOVE.L #MOSTRARPUNTUACION,A1
+000019CA  4E4F                     855      TRAP #15    
+000019CC  7003                     856      MOVE.L #3,D0 #Mostramos la puntuación que lleva el usuario con el task 3.
+000019CE  2239 00005096            857      MOVE.L PUNTUACION,D1
+000019D4  4E4F                     858      TRAP #15           
+000019D6  4CDF 0203                859      MOVEM.L (A7)+,D0-D1/A1
+000019DA  4E75                     860      RTS
+000019DC                           861  * ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+000019DC                           862  * ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+000019DC                           863  TIEMPO *Esta subrutina se encarga de gestionar el marcador de tiempo
+000019DC  48E7 E040                864      MOVEM.L D0-D2/A1,-(A7)
+000019E0                           865  **Con estas siete instrucciones, ponemos el color a blanco y el tipo de letra normal con color de relleno negro.
+000019E0  7015                     866      MOVE.L #21,D0
+000019E2  7400                     867      MOVE.L #0,D2
+000019E4  223C 00FFFFFF            868      MOVE.L #$00FFFFFF,D1
+000019EA  4E4F                     869      TRAP #15
+000019EC  7051                     870      MOVE.L #81,D0
+000019EE  7200                     871      MOVE.L #$00000000,D1
+000019F0  4E4F                     872      TRAP #15
+000019F2  4240                     873      CLR D0
+000019F4  4241                     874      CLR D1
+000019F6  700B                     875      MOVE.L #11,D0 #Movemos el cursos a donde lo necesitamos para escribir.
+000019F8  223C 00000521            876      MOVE.L #$0521,D1
+000019FE  4E4F                     877      TRAP #15         
+00001A00  7008                     878      MOVE.L #8,D0 #Sacamos el tiempo del sistema como hemos mencionado antes usando el task 8.
+00001A02  4E4F                     879      TRAP #15    
+00001A04  2439 00005220            880      MOVE.L ENDTIME,D2 #Movemos el valor del tiempo total a D2
+00001A0A  9481                     881      SUB.L D1,D2 #Al realizar esta resta, obtendremos en D2 el valor el tiempo que le queda al usuario para jugar.
+00001A0C  2202                     882      MOVE.L D2,D1
+00001A0E  82FC 0064                883      DIVU #100,D1 #Divimos por 100 ya que el resutado nos viene en centésimas de segundo.
+00001A12  4841                     884      SWAP D1 #Con estas 3 instrucciones consecutivas (SWAP CRL SWAP) borramos el signo de la resta. Es decir, al realizar la resta se pone FFFF en los 2 bytes más significativos de D1 y hay que borrarlo.
+00001A14  4241                     885      CLR.W D1
+00001A16  4841                     886      SWAP D1
+00001A18  B2BC 00000009            887      CMP.L #9,D1 #Comparamos con 9 ya que este sistema muestra bien los números hasta el 10, pero a partir del 10, muestra 90,80,70... así que hay que modificar el bloque.
+00001A1E  6F00 001E                888      BLE AUX_TIEMPO #Saltamos al bloque modificado para mostrar 9,8,7,6,5,4,3,2,1,0.
+00001A22                           889  VOLVER_TIEMPO
+00001A22  7003                     890      MOVE.L #3,D0 #Muestra el tiempo.
+00001A24  4E4F                     891      TRAP #15    
+00001A26  7050                     892      MOVE.L #80,D0
+00001A28  223C 00FFFFFF            893      MOVE.L #$00FFFFFF,D1 # ponemos en blanco el color del pen
+00001A2E  7051                     894      MOVE.L #81,D0
+00001A30  223C 0000FF00            895      MOVE.L #$0000FF00,D1  #ponemos en LIME el color de relleno     
+00001A36  4E4F                     896      TRAP #15        
+00001A38  4CDF 0207                897      MOVEM.L (A7)+,D0-D2/A1
+00001A3C  4E75                     898      RTS
+00001A3E                           899  AUX_TIEMPO
+00001A3E                           900  **Esta subrutina muestra los números entre 10 y 0 de forma adecuada.
+00001A3E  2401                     901      MOVE.L D1,D2
+00001A40  7200                     902      MOVE.L #0,D1
+00001A42  7003                     903      MOVE.L #3,D0 #Primero mostramos un 0 para después poner el número real. Es decir, ponemos 0 y luego con las instrucciones siguientes el 9 para que quede 09.
+00001A44  4E4F                     904      TRAP #15
+00001A46  700B                     905      MOVE.L #11,D0
+00001A48  223C 00000621            906      MOVE.L #$0621,D1 #Desplazamos el cursor una unidad a la derecha.
+00001A4E  4E4F                     907      TRAP #15   
+00001A50  2202                     908      MOVE.L D2,D1
+00001A52  4EF8 1A22                909      JMP VOLVER_TIEMPO
+00001A56                           910  * ///////////////////////////////////////////////////////////////////////
+00001A56                           911  * ///////////////////////////////////////////////////////////////////////
+00001A56                           912  **En estos dos bloques FINAL y FINAL2, se creará la pantalla de GAMEOVER que aparecerá cuando el usuario pierda.
+00001A56                           913  FINAL2
+00001A56                           914  **Este final ocurrirá cuando se acabe el tiempo de juego.
+00001A56  700B                     915      MOVE.L #11,D0 #Ponemos la pantalla a negro como hemos mencionado antes, asignándole el valor hexadecimal #$FF00 a D1 y usando el task 11
+00001A58  323C FF00                916      MOVE.W #$FF00,D1
+00001A5C  4E4F                     917      TRAP #15   
+00001A5E  7046                     918      MOVE.L #70,D0 #Activamos el sonido que debe sonar cuando se agota el tiempo de juego, almacenado en la etiqueta NOTIME.
+00001A60  227C 00005215            919      MOVE.L #NOTIME,A1
+00001A66  4E4F                     920      TRAP #15   
+00001A68  7017                     921      MOVE.L #23,D0 
+00001A6A  223C 000000C8            922      MOVE.L #200,D1
+00001A70  4E4F                     923      TRAP #15
+00001A72  704C                     924      MOVE.L #76,D0 #Paramos el sonido activo.
+00001A74  7403                     925      MOVE.L #3,D2
+00001A76  4E4F                     926      TRAP #15     
+00001A78                           927  FINAL 
+00001A78  704C                     928      MOVE.L #76,D0 #Paramos todos los sonidos.
+00001A7A  7403                     929      MOVE.L #3,D2
+00001A7C  4E4F                     930      TRAP #15
+00001A7E  700B                     931      MOVE.L #11,D0 #Ponemos la pantalla a negro para mostrar posteriormente las frases que queremos mostrar.
+00001A80  323C FF00                932      MOVE.W #$FF00,D1
+00001A84  4E4F                     933      TRAP #15   
+00001A86  7046                     934      MOVE.L #70,D0 #Activamos el sonido de GAME OVER, almacenado en la etiqueta YOULOSE.
+00001A88  227C 00005194            935      MOVE.L #YOULOSE,A1
+00001A8E  4E4F                     936      TRAP #15    
+00001A90  103C 0021                937      MOVE.B #33,D0
+00001A94  223C 028001E0            938      MOVE.L #640*$10000+480,D1 #Con estas tres instrucciones asignamos el tamaño que queremos a la pantalla de nuevo.
+00001A9A  4E4F                     939      TRAP #15   
+00001A9C  7015                     940      MOVE.L #21,D0 #Ponemos el color del pen y de relleno por defecto (escribe en blanco $00FFFFFF y el fondo negro $00000000) usando el task 21 Y 81.
+00001A9E  223C 00FFFFFF            941      MOVE.L #$00FFFFFF,D1
+00001AA4  7400                     942      MOVE.L #$0000000,D2
+00001AA6  4E4F                     943      TRAP #15
+00001AA8  7051                     944      MOVE.L #81,D0
+00001AAA  7200                     945      MOVE.L #$00000000,D1
+00001AAC  4E4F                     946      TRAP #15
+00001AAE                           947  ** Otra vez movemos los valores de las direcciones de memoria donde se encuentran las frases que queremos escribir en pantalla a A1 para mostrarlas en las coordenadas asignadas con el task 95. 
+00001AAE  227C 00005084            948      MOVE.L #GAMEOVER,A1    
+00001AB4  705F                     949      MOVE.L #95,D0
+00001AB6  323C 0118                950      MOVE.W #280,D1
+00001ABA  343C 00F0                951      MOVE.W #240,D2
+00001ABE  4E4F                     952      TRAP #15 
+00001AC0  227C 000050A6            953      MOVE.L #TRYAGAIN,A1    
+00001AC6  705F                     954      MOVE.L #95,D0
+00001AC8  323C 00C8                955      MOVE.W #200,D1
+00001ACC  343C 0104                956      MOVE.W #260,D2
+00001AD0  4E4F                     957      TRAP #15
+00001AD2  4241                     958      CLR D1
+00001AD4  4240                     959      CLR D0  
+00001AD6  700B                     960      MOVE.L #11,D0 #Como lo que queremos mostrar en pantalla ahora es un número que puede variar, no podemos usar el task 95.Sin embargo, usaremos el 11 para poner el cursor donde queremos y escribir.
+00001AD8  323C 2715                961      MOVE.W #$2715,D1 #Asignamos columna ($27) y fila ($15) al registro D1. Ahí es donde se coloca nuestro cursor.
+00001ADC  4E4F                     962      TRAP #15      
+00001ADE  7003                     963      MOVE.L #3,D0 #Con estas tres instrucciones mostramos la puntuación obtenida en el juego.
+00001AE0  2239 00005096            964      MOVE.L PUNTUACION,D1 #El detalle de esta instrucción es la carencia de # antes de la etiqueta. Esto se debe a que queremos el valor almacenado, no su dirección.
+00001AE6  4E4F                     965      TRAP #15
+00001AE8  4EB9 00001AF4            966      JSR REINICIO #Saltamos a una subrutina que reinicia los valores que se usan para generar la matriz y los demás elementos. Es necesario porque si el usuario quiere intentarlo de nuevo, se deben limpiar los valores antiguos.
+00001AEE  4EF9 00001B28            967      JMP RETRY #Saltamos a la subrutina que permite que el usuario pruebe de nuevo.
+00001AF4                           968  * ////////////////////////////////////////////////////////////////////////////////////////////////////////
+00001AF4                           969  * ////////////SUBRUTINA ENCARGADA DE LIMPIAR LA MATRIZ PARA PODER JUGAR DE NUEVO//////////////////////////
+00001AF4                           970  REINICIO 
+00001AF4                           971  **Limpia los registros para el reinicio de la matriz.
+00001AF4  48E7 0006                972      MOVEM.L A5-A6,-(A7)
+00001AF8  2A7C 00000000            973      MOVE.L #0,A5 
+00001AFE  2C7C 00000000            974      MOVE.L #0,A6
+00001B04  2C7C 00002AF0            975      MOVE.L #MATRIZ,A6
+00001B0A  DBCE                     976      ADD.L A6,A5 #guardamos en A5 el final de la matriz como auxiliar
+00001B0C  DBFC 00002580            977      ADD.L #9600,A5 #sumamos 9600 ya que es el valor total de matriz, (80*60 posiciones) * 2 (tamaño .w)
+00001B12                           978  BUCLE_REINICIO
+00001B12  3CBC FFFF                979      MOVE.W #$FFFF,(A6) #vaciamos la matriz
+00001B16  544E                     980      ADD #2,A6 #apuntamos a la siguiente posicion de matriz
+00001B18  BBCE                     981      CMP.L A6,A5 #comparamos con el final de matriz
+00001B1A  6700 0006                982      BEQ SALIR_REI #si es el final, salimos de la subrutina
+00001B1E  4EF8 1B12                983      JMP BUCLE_REINICIO
+00001B22                           984  SALIR_REI
+00001B22  4CDF 6000                985      MOVEM.L (A7)+,A5-A6
+00001B26  4E75                     986      RTS
+00001B28                           987  * ///////////////////////////////////////////////////////////////////////
+00001B28                           988  * ///////////////////////////////////////////////////////////////////////
+00001B28                           989  RETRY  
+00001B28                           990  **Esta subrutina se encarga de darle la oportunidad de probar otra vez al usuario.
+00001B28  700B                     991      MOVE.L #11,D0
+00001B2A  323C 0000                992      MOVE.W #$0000,D1 #Colocamos el cursor en la posición (0,0) con estas tres instrucciones y el task 11.
+00001B2E  4E4F                     993      TRAP #15
+00001B30  7015                     994      MOVE.L #21,D0
+00001B32  7200                     995      MOVE.L #$00000000,D1 #Como ya hemos comentado antes, el task 5 genera una barra baja para que el usuario escriba en ella. Para ocultarla, cambiamos el color del pen a negro.
+00001B34  4E4F                     996      TRAP #15  
+00001B36  7005                     997      MOVE.L #5,D0 #Esperamos a que el usuario pulse con el task 5.   
+00001B38  4E4F                     998      TRAP #15    
+00001B3A  B2BC 00000052            999      CMP.L #$52,D1 #Comparamos con el valor $52-R y el $72-r para saber si el usuario quiere comenzar de nuevo.
+00001B40  6700 F4D6               1000      BEQ START1
+00001B44  B2BC 00000072           1001      CMP.L #$72,D1
+00001B4A  6700 F4CC               1002      BEQ START1 #Saltamos al principio del programa
+00001B4E  66D8                    1003      BNE RETRY 
+00001B50                          1004  * /////////////////////////////////////////////////////////////////////// 
+00001B50                          1005      *ETIQUETAS
+00001B50                          1006  SERPX DS.W 1000 #Almacén de las X.
+00002320                          1007  SERPY DS.W 1000 #Almacén de las Y.
+00002AF0                          1008  MATRIZ DS.W 80*60  #Matriz
+00005070                          1009  PRNL    DS.L 1
+00005074                          1010  CONTADORDELAY DS.L 4 #Velocidad de nuestra serpiente.
+00005084= 47 41 4D 45 20 4F ...   1011  GAMEOVER DC.B 'GAME OVER',0
+0000508E= 53 43 4F 52 45 20 00    1012  MOSTRARPUNTUACION DC.B 'SCORE ',0
+00005096                          1013  PUNTUACION DS.L 4 #Puntuación obtenida por el usuario.
+000050A6= 50 52 45 53 53 20 ...   1014  TRYAGAIN DC.B 'PRESS R TWICE TO TRY AGAIN ',0
+000050C2= 4E 4F 52 4D 41 4C ...   1015  MODONORMAL DC.B 'NORMAL MODE (1) ',0
+000050D3= 46 4C 45 45 54 49 ...   1016  MODORAPIDO DC.B 'FLEETING MODE (2) ',0
+000050E6= 53 48 45 44 20 4D ...   1017  MODOSKIN DC.B 'SHED MODE (3) ',0
+000050F5= 53 4E 41 4B 45 00       1018  TITULO DC.B 'SNAKE',0
+000050FB= 53 45 4C 45 43 54 ...   1019  PULSA DC.B 'SELECT ONE MODE: ',0
+0000510D= 45 58 54 52 45 4D ...   1020  MODOEXTREMO DC.B 'EXTREME MODE (4) ',0
+0000511F= 50 52 45 53 53 20 ...   1021  EMPEZAR DC.B 'PRESS ANY KEY TO START ',0
+00005137= 32 34 30 32 31 30 ...   1022  WELCOME DC.B '240210_shahabazkhan_welcome-to-the-game_mp3cut_net.wav',0 #Las siguientes etiquetas se corresponden a los audios empleados en el programa.
+0000516E= 31 38 36 33 37 36 ...   1023  COMER DC.B '186376_pasalo92_comer_mp3cut_net_.wav',0
+00005194= 31 37 38 38 37 35 ...   1024  YOULOSE DC.B '178875__rocotilos__you-lose-evil.wav',0
+000051B9= 32 30 31 38 38 33 ...   1025  SILENCIO DC.B '201883_parcodeisuoni_silence.wav',0
+000051DA= 33 38 34 33 30 38 ...   1026  MUSICAMENU DC.B '384308_frankum_epic-chorus-song-no-flangerfx-probl (1).wav',0
+00005215= 61 69 6C 2E 77 61 ...   1027  NOTIME DC.B 'ail.wav',0 
+0000521E                          1028  MODO DS.W 1 #Modo de juego (1,2,3,4)
+00005220                          1029  ENDTIME DS.L 1 #Tiempo final de juego
+00005224                          1030  TIEMPOJUEGO DS.W 1 #Tiempo que tiene el jugador para comer la fruta
+00005226                          1031  * ///////////////////////////////////////////////////////////////////////    
+00005226                          1032      END START
+
+No errors detected
+No warnings generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+AUX                 17CE
+AUX2                180C
+AUXINICIO           1152
+AUX_ABA             15F4
+AUX_ABA2            1650
+AUX_ARR             1680
+AUX_ARR2            16DC
+AUX_COLA            14A4
+AUX_CRECER          1414
+AUX_DER             14DC
+AUX_DER2            1538
+AUX_FRUTA2          18D6
+AUX_IZQ             1568
+AUX_IZQ2            15C4
+AUX_MODOEXTREM      1366
+AUX_MODOHARD        134C
+AUX_MODOPIEL        1398
+AUX_SALIR           1896
+AUX_SIG             10CA
+AUX_TIEMPO          1A3E
+AUX_TIMEEX          137A
+BORDE               1744
+BORDE_LAT           17DA
+BORDE_SUP_INF       179E
+BORRA               1962
+BUCL                1460
+BUCLEABAJO          15CC
+BUCLEARRIBA         1658
+BUCLEDER            14B4
+BUCLEIZQ            1540
+BUCLE_REINICIO      1B12
+BUCL_CRECER         13EA
+COLAABA             1626
+COLAARR             16B2
+COLADER             150E
+COLAIZQ             159A
+COMER               516E
+COMPRUEBA_TIEMPO    1330
+CONTADORDELAY       5074
+COORDENADAS_A_DIRECCION  18E2
+COORDENADAS_A_PIXEL  1916
+CRECER              13A0
+CRECER2             13D2
+CUERPOABA           161C
+CUERPOARR           16A8
+CUERPODER           1504
+CUERPOIZQ           1590
+DELAY               1946
+DIBUJAR             195C
+EMPEZAR             511F
+ENDTIME             5220
+FINAL               1A78
+FINAL2              1A56
+FONDO               1724
+FRUTA               16E4
+GAMEOVER            5084
+GENERA_BORDES_LAT   1798
+GENERA_BORDES_SUP_INF  1792
+GENERA_FRUTA        1818
+GENERA_SERPIENTE    1764
+INICIA_TIEMPO       1312
+INIRND              1840
+LAB_RND             184C
+LECTURA             193A
+LEER                1256
+MATRIZ              2AF0
+MENU                1180
+MODO                521E
+MODOEXTREM          12F4
+MODOEXTREMO         510D
+MODOHARD            12B8
+MODONORM            129A
+MODONORMAL          50C2
+MODOPIEL            12D6
+MODORAPIDO          50D3
+MODOSKIN            50E6
+MOSTRARPUNTUACION   508E
+MUSICAMENU          51DA
+NINC0               1870
+NINC1               1876
+NOTIME              5215
+OTRO                1822
+PANTALLAINICIO      1118
+PRNL                5070
+PROGRAMA            109A
+PULSA               50FB
+PUNTOS              199E
+PUNTUACION          5096
+RANGO1              4F
+RANGO2              3B
+REINICIO            1AF4
+RETRY               1B28
+SALIR_REI           1B22
+SERPIENTE           1704
+SERPX               1B50
+SERPY               2320
+SIGUE               10E0
+SILENCIO            51B9
+SNAKE               108E
+START               1000
+START1              1018
+START2              1028
+SUBRUTINA_CUERPO    145E
+TECLADO             1938
+TIEMPO              19DC
+TIEMPOJUEGO         5224
+TITULO              50F5
+TRYAGAIN            50A6
+VOLVERPIEL          140E
+VOLVER_TIEMPO       1A22
+VUELTA              10BA
+VUELTA_1            17B6
+VUELTA_2            17F6
+WELCOME             5137
+YOULOSE             5194
